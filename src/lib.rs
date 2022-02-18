@@ -18,18 +18,18 @@ use hashbrown::hash_map::Values;
 use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
-pub struct DirectedGraph<TNode: Node, TEdge: Edge<Node = TNode>> {
+pub struct DirectedGraph<TEdge: Edge> {
     // Stores real data
-    node: HashMap<TNode::NodeIndex, TNode>,
+    node: HashMap<<TEdge::Node as Node>::NodeIndex, TEdge::Node>,
     edge: HashMap<DirectedEdge<TEdge>, TEdge>,
     weak_edge: HashMap<DirectedEdge<TEdge>, TEdge>,
 
     // Indexes to search nodes
-    children: HashMap<TNode::NodeIndex, HashSet<TNode::NodeIndex>>,
-    parent: HashMap<TNode::NodeIndex, TNode::NodeIndex>,
+    children: HashMap<<TEdge::Node as Node>::NodeIndex, HashSet<<TEdge::Node as Node>::NodeIndex>>,
+    parent: HashMap<<TEdge::Node as Node>::NodeIndex, <TEdge::Node as Node>::NodeIndex>,
 }
 
-impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
+impl<TEdge: Edge> DirectedGraph<TEdge> {
     pub fn new() -> Self {
         Self {
             node: HashMap::new(),
@@ -40,7 +40,7 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
         }
     }
 
-    pub fn nodes(&self) -> Values<TNode::NodeIndex, TNode> {
+    pub fn nodes(&self) -> Values<<TEdge::Node as Node>::NodeIndex, TEdge::Node> {
         self.node.values()
     }
 
@@ -48,7 +48,7 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
         self.edge.values()
     }
 
-    pub fn add_node(&mut self, node: &TNode) -> () {
+    pub fn add_node(&mut self, node: &TEdge::Node) -> () {
         // NOTE: *Last* inserted node overwhelms existing node when nodes with same name are inserted
         self.node.insert(node.index().clone(), node.clone());
         if !self.children.contains_key(&node.index()) {
@@ -60,10 +60,10 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
     pub fn add_edge(&mut self, edge: &TEdge) -> () {
         // Some times explicit node declarations are missed in original mutation graph node
         if self.get_node(&edge.parent()).is_none() {
-            self.add_node(&TNode::implicit_new(&edge.parent()))
+            self.add_node(&TEdge::Node::implicit_new(&edge.parent()))
         }
         if self.get_node(&edge.child()).is_none() {
-            self.add_node(&TNode::implicit_new(&edge.child()))
+            self.add_node(&TEdge::Node::implicit_new(&edge.child()))
         }
 
         // Insert edge and update indexes avoiding making closed chains
@@ -100,7 +100,7 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
             .insert(DirectedEdge::from(&edge), edge.clone());
     }
 
-    pub fn get_node(&self, node: &TNode::NodeIndex) -> Option<&TNode> {
+    pub fn get_node(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Option<&TEdge::Node> {
         self.node.get(node)
     }
 
@@ -108,18 +108,18 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
         self.edge.get(arrow)
     }
 
-    pub fn children_of(&self, parent: &TNode::NodeIndex) -> Option<&HashSet<TNode::NodeIndex>> {
+    pub fn children_of(&self, parent: &<TEdge::Node as Node>::NodeIndex) -> Option<&HashSet<<TEdge::Node as Node>::NodeIndex>> {
         self.children.get(parent)
     }
 
-    pub fn parent_of(&self, child: &TNode::NodeIndex) -> Option<&TNode::NodeIndex> {
+    pub fn parent_of(&self, child: &<TEdge::Node as Node>::NodeIndex) -> Option<&<TEdge::Node as Node>::NodeIndex> {
         self.parent.get(child)
     }
 
     pub fn root_of<'a>(
         &'a self,
-        node: &'a TNode::NodeIndex,
-    ) -> Result<&'a TNode::NodeIndex, TNode> {
+        node: &'a <TEdge::Node as Node>::NodeIndex,
+    ) -> Result<&'a <TEdge::Node as Node>::NodeIndex, TEdge::Node> {
         if self.get_node(node).is_none() {
             return Err(GraphError::NodeNotExists(node.clone()));
         }
@@ -129,21 +129,21 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
         }
     }
 
-    fn __rank_of(&self, node: &TNode::NodeIndex, rank: usize) -> Result<usize, TNode> {
+    fn __rank_of(&self, node: &<TEdge::Node as Node>::NodeIndex, rank: usize) -> Result<usize, TEdge::Node> {
         match self.parent_of(node) {
             Some(parent) => self.__rank_of(parent, rank + 1),
             None => Ok(rank), // If given node is root, then rank is 0.
         }
     }
 
-    pub fn rank_of(&self, node: &TNode::NodeIndex) -> Result<usize, TNode> {
+    pub fn rank_of(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Result<usize, TEdge::Node> {
         self.__rank_of(node, 0)
     }
 
     pub fn predecessors_of(
         &self,
-        node: &TNode::NodeIndex,
-    ) -> Result<Vec<&TNode::NodeIndex>, TNode> {
+        node: &<TEdge::Node as Node>::NodeIndex,
+    ) -> Result<Vec<&<TEdge::Node as Node>::NodeIndex>, TEdge::Node> {
         if self.get_node(node).is_none() {
             return Err(GraphError::NodeNotExists(node.clone()));
         }
@@ -161,8 +161,8 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
 
     pub fn self_and_its_predecessors_of(
         &self,
-        node: &TNode::NodeIndex,
-    ) -> Result<Vec<&TNode::NodeIndex>, TNode> {
+        node: &<TEdge::Node as Node>::NodeIndex,
+    ) -> Result<Vec<&<TEdge::Node as Node>::NodeIndex>, TEdge::Node> {
         let mut res = self.predecessors_of(node)?;
         match self.get_node(node) {
             Some(node) => res.push(node.index()),
@@ -171,7 +171,7 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
         Ok(res)
     }
 
-    pub fn leaves(&self) -> HashSet<&TNode::NodeIndex> {
+    pub fn leaves(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         self.children
             .iter()
             .filter(|(_, v)| v.len() == 0)
@@ -179,7 +179,7 @@ impl<TNode: Node, TEdge: Edge<Node = TNode>> DirectedGraph<TNode, TEdge> {
             .collect()
     }
 
-    pub fn roots(&self) -> HashSet<&TNode::NodeIndex> {
+    pub fn roots(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         self.node
             .keys()
             .filter(|v| self.parent_of(v).is_none())
@@ -260,7 +260,7 @@ mod tests {
         let node_1_sha1 = String::from("node_1");
         let no_such_node_sha1 = String::from("no_such_node");
 
-        let mut graph = DirectedGraph::<TestGraphNode, TestGraphEdge>::new();
+        let mut graph = DirectedGraph::<TestGraphEdge>::new();
 
         let node_1 = TestGraphNode::new(&node_1_sha1);
         graph.add_node(&node_1);
