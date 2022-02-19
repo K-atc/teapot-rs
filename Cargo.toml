@@ -13,7 +13,8 @@ std = ["difference"]
 [dependencies]
 
 ### HashMap
-hashbrown = { version="0.9", default-features = false, features = ["ahash"] }
+hashbrown = "0.9" # This version compatible with Intel Pin
+#hashbrown = { version="0.9", default-features = false, features = ["ahash"] } # This version compatible with Intel Pin
 
 ### Traits
 acid_io = { git = "https://github.com/K-atc/acid_io.git", version = "0.1.0", default-features = false, features = ["alloc", "byteorder"] }
