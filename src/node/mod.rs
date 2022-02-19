@@ -1,3 +1,4 @@
+pub mod basic_node;
 pub mod node_index;
 
 use crate::node::node_index::NodeIndex;

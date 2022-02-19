@@ -1,3 +1,4 @@
+pub mod basic_edge;
 pub mod directed_edge;
 
 use crate::node::Node;

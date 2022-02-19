@@ -239,15 +239,15 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
 mod tests {
     extern crate std;
 
-    use crate::edge::Edge;
+    use crate::edge::basic_edge::BasicEdge;
     use crate::error::GraphError;
     use crate::graph::directed_graph::DirectedGraph;
+    use crate::node::basic_node::BasicNode;
     use crate::node::node_index::NodeIndex;
     use crate::node::Node;
     use alloc::string::String;
     use alloc::vec;
     use alloc::vec::Vec;
-    use core::hash::Hash;
     use difference::Changeset;
     use hashbrown::HashSet;
     use io::Read;
@@ -258,57 +258,8 @@ mod tests {
 
     impl NodeIndex for String {}
 
-    #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default, Hash)]
-    struct TestGraphNode {
-        index: String,
-    }
-
-    impl Node for TestGraphNode {
-        type NodeIndex = String;
-
-        fn implicit_new(index: &Self::NodeIndex) -> Self {
-            Self::new(index)
-        }
-
-        fn index(&self) -> &Self::NodeIndex {
-            &self.index
-        }
-    }
-
-    impl TestGraphNode {
-        pub fn new(index: &String) -> Self {
-            Self {
-                index: index.clone(),
-            }
-        }
-    }
-
-    #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
-    struct TestGraphEdge {
-        parent: String,
-        child: String,
-    }
-
-    impl TestGraphEdge {
-        pub fn new(parent: &String, child: &String) -> Self {
-            Self {
-                parent: parent.clone(),
-                child: child.clone(),
-            }
-        }
-    }
-
-    impl Edge for TestGraphEdge {
-        type Node = TestGraphNode;
-
-        fn parent(&self) -> &<Self::Node as Node>::NodeIndex {
-            &self.parent
-        }
-
-        fn child(&self) -> &<Self::Node as Node>::NodeIndex {
-            &self.child
-        }
-    }
+    type TestGraphNode = BasicNode<String>;
+    type TestGraphEdge = BasicEdge<String>;
 
     #[test]
     fn test_directed_graph_node() {
