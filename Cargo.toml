@@ -7,8 +7,9 @@ license = "MIT OR Apache-2.0"
 keywords = ["graph","no_std"]
 
 [features]
-default = ["std"]
+default = ["std", "metrics"]
 std = ["difference"]
+metrics = []
 
 [dependencies]
 

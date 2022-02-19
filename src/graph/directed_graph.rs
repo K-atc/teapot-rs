@@ -136,19 +136,19 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         }
     }
 
-    fn __degree_of(
+    fn __rank_of(
         &self,
         node: &<TEdge::Node as Node>::NodeIndex,
         degree: usize,
     ) -> Result<usize, TEdge> {
         match self.parent_of(node) {
-            Some(parent) => self.__degree_of(parent, degree + 1),
+            Some(parent) => self.__rank_of(parent, degree + 1),
             None => Ok(degree), // If given node is root, then degree is 0.
         }
     }
 
-    pub fn degree_of(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Result<usize, TEdge> {
-        self.__degree_of(node, 0)
+    pub fn rank_of(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Result<usize, TEdge> {
+        self.__rank_of(node, 0)
     }
 
     pub fn predecessors_of(
@@ -331,8 +331,8 @@ mod tests {
 
         assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
 
-        assert_eq!(graph.degree_of(&node_1_index), Ok(0));
-        assert_eq!(graph.degree_of(&node_5_index), Ok(3));
+        assert_eq!(graph.rank_of(&node_1_index), Ok(0));
+        assert_eq!(graph.rank_of(&node_5_index), Ok(3));
     }
 
     #[test]

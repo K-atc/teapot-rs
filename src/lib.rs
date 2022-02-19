@@ -19,3 +19,24 @@ pub mod error;
 pub mod graph;
 pub mod node;
 pub mod result;
+
+#[macro_export]
+macro_rules! metrics {
+    ( $expr:expr ) => {{
+        #[cfg(feature = "metrics")]
+        $expr
+    }};
+    ( $expr:expr; ) => {{
+        #[cfg(feature = "metrics")]
+        $expr;
+    }};
+    ( $stmt:stmt ) => {{
+        #[cfg(feature = "metrics")]
+        $stmt
+    }};
+    ( $block:block ) => {{
+        #[cfg(feature = "metrics")]
+        $block
+    }};
+}
+
