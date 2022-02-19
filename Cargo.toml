@@ -13,7 +13,7 @@ std = ["difference"]
 [dependencies]
 
 ### HashMap
-hashbrown = "0.9"
+hashbrown = { version="0.9", default-features = false, features = ["ahash"] }
 
 ### Traits
 acid_io = { git = "https://github.com/K-atc/acid_io.git", version = "0.1.0", default-features = false, features = ["alloc", "byteorder"] }

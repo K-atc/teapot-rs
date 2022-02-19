@@ -31,11 +31,12 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     pub fn new(name: String) -> Self {
         Self {
             name,
-            node: HashMap::new(),
-            edge: HashMap::new(),
-            weak_edge: HashMap::new(),
-            children: HashMap::new(),
-            parent: HashMap::new(),
+            // NOTE: Do not use `HashMap::new()`. `HashMap::with_capacity()` avoids assertion fail
+            node: HashMap::with_capacity(1024),
+            edge: HashMap::with_capacity(1024),
+            weak_edge: HashMap::with_capacity(32),
+            children: HashMap::with_capacity(1024),
+            parent: HashMap::with_capacity(1024),
         }
     }
 
@@ -52,7 +53,8 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         self.node.insert(node.index().clone(), node.clone());
         if !self.children.contains_key(&node.index()) {
             // Initialize children on first time
-            self.children.insert(node.index().clone(), HashSet::new());
+            // NOTE: Do not use HashSet::new(). HashSet::with_capacity() avoids asertion fail related to SSE
+            self.children.insert(node.index().clone(), HashSet::with_capacity(8));
         }
     }
 
@@ -200,7 +202,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         write!(file, "  directed 1\n")?;
         write!(file, "  name \"{}\"\n", self.name)?;
 
-        let mut index_to_id = HashMap::new();
+        let mut index_to_id = HashMap::with_capacity(self.node.len());
 
         {
             let heap: BinaryHeap<Reverse<&<TEdge::Node as Node>::NodeIndex>> =
@@ -381,6 +383,17 @@ mod tests {
         graph.add_edge(&TestGraphEdge::new(&node_3_index, &node_1_index));
 
         assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
+    }
+
+    #[test]
+    fn test_directed_graph_real_sample() {
+        type Edge = BasicEdge<u64>;
+        impl NodeIndex for u64 {}
+
+        let mut graph = DirectedGraph::new(String::from("test"));
+        graph.add_edge(&Edge::new(&0x421493, &0x41c2d9));
+        graph.add_edge(&Edge::new(&0x41c2d9, &0x402566));
+        graph.add_edge(&Edge::new(&0x41c33c, &0x421493));
     }
 
     #[test]
