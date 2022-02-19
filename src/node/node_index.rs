@@ -1,4 +1,4 @@
-use core::fmt::Debug;
+use core::fmt::{Debug, Display};
 use core::hash::Hash;
 
-pub trait NodeIndex: Debug + Clone + Eq + PartialEq + Hash + Sized {}
+pub trait NodeIndex: Display + Debug + Clone + Eq + PartialEq + Ord + Hash + Sized {}

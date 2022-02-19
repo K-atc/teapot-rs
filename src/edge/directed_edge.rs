@@ -1,11 +1,11 @@
-use super::Edge;
-use crate::Node;
+use crate::edge::Edge;
+use crate::node::Node;
 use core::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Ord, PartialOrd)]
 pub struct DirectedEdge<TEdge: Edge> {
-    pub(crate) parent: <TEdge::Node as Node>::NodeIndex,
-    pub(crate) child: <TEdge::Node as Node>::NodeIndex,
+    parent: <TEdge::Node as Node>::NodeIndex,
+    child: <TEdge::Node as Node>::NodeIndex,
 }
 
 impl<TEdge: Edge> Hash for DirectedEdge<TEdge> {
@@ -39,5 +39,13 @@ impl<TEdge: Edge> DirectedEdge<TEdge> {
             parent: edge.parent().clone(),
             child: edge.child().clone(),
         }
+    }
+
+    pub fn parent(&self) -> &<TEdge::Node as Node>::NodeIndex {
+        &self.parent
+    }
+
+    pub fn child(&self) -> &<TEdge::Node as Node>::NodeIndex {
+        &self.child
     }
 }

@@ -6,7 +6,17 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 keywords = ["graph","no_std"]
 
+[features]
+default = ["std"]
+std = ["difference"]
+
 [dependencies]
 
 ### HashMap
 hashbrown = "0.9"
+
+### Traits
+acid_io = { git = "https://github.com/K-atc/acid_io.git", version = "0.1.0", default-features = false, features = ["alloc", "byteorder"] }
+
+### Test support
+difference = { version = "2.0", optional = true }
