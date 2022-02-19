@@ -457,7 +457,10 @@ mod tests {
         let mut out_gml = io::Cursor::new(Vec::new());
         assert!(graph.gml_write(&mut out_gml).is_ok());
 
+        #[cfg(feature = "metrics")]
         let mut true_file = File::open("tests/test_directed_graph_gml_write.gml").unwrap();
+        #[cfg(not(feature = "metrics"))]
+        let mut true_file = File::open("tests/test_directed_graph_gml_write.minimal.gml").unwrap();
         let mut true_gml = Vec::new();
         assert!(true_file.read_to_end(&mut true_gml).is_ok());
 
