@@ -22,6 +22,10 @@ pub mod result;
 
 #[macro_export]
 macro_rules! metrics {
+    ( $ident:ident ) => {{
+        #[cfg(feature = "metrics")]
+        $ident
+    }};
     ( $expr:expr ) => {{
         #[cfg(feature = "metrics")]
         $expr
@@ -39,4 +43,3 @@ macro_rules! metrics {
         $block
     }};
 }
-

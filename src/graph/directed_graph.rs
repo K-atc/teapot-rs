@@ -1,15 +1,20 @@
 use crate::edge::directed_edge::DirectedEdge;
 use crate::edge::Edge;
+#[allow(unused_imports)]
 use crate::error::GraphError;
 use crate::io;
+use crate::metrics;
 use crate::node::Node;
 use crate::result::Result;
 use alloc::collections::binary_heap::BinaryHeap;
 use alloc::string::String;
+#[allow(unused_imports)]
 use alloc::vec;
+#[allow(unused_imports)]
 use alloc::vec::Vec;
 use core::cmp::Reverse;
 use hashbrown::hash_map::Values;
+#[allow(unused_imports)]
 use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
@@ -23,7 +28,9 @@ pub struct DirectedGraph<TEdge: Edge> {
     weak_edge: HashMap<DirectedEdge<TEdge>, TEdge>,
 
     // Indexes to search nodes
+    #[cfg(feature = "metrics")]
     children: HashMap<<TEdge::Node as Node>::NodeIndex, HashSet<<TEdge::Node as Node>::NodeIndex>>,
+    #[cfg(feature = "metrics")]
     parent: HashMap<<TEdge::Node as Node>::NodeIndex, <TEdge::Node as Node>::NodeIndex>,
 }
 
@@ -35,7 +42,9 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             node: HashMap::with_capacity(1024),
             edge: HashMap::with_capacity(1024),
             weak_edge: HashMap::with_capacity(32),
+            #[cfg(feature = "metrics")]
             children: HashMap::with_capacity(1024),
+            #[cfg(feature = "metrics")]
             parent: HashMap::with_capacity(1024),
         }
     }
@@ -51,10 +60,13 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     pub fn add_node(&mut self, node: &TEdge::Node) -> () {
         // NOTE: *Last* inserted node overwhelms existing node when nodes with same name are inserted
         self.node.insert(node.index().clone(), node.clone());
-        if !self.children.contains_key(&node.index()) {
-            // Initialize children on first time
-            // NOTE: Do not use HashSet::new(). HashSet::with_capacity() avoids asertion fail related to SSE
-            self.children.insert(node.index().clone(), HashSet::with_capacity(8));
+        metrics! {
+            if !self.children.contains_key(&node.index()) {
+                // Initialize children on first time
+                // NOTE: Do not use HashSet::new(). HashSet::with_capacity() avoids asertion fail related to SSE
+                self.children
+                    .insert(node.index().clone(), HashSet::with_capacity(8));
+            }
         }
     }
 
@@ -67,33 +79,39 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             self.add_node(&TEdge::Node::implicit_new(&edge.child()))
         }
 
-        // Insert edge and update indexes avoiding making closed chains
-        match (self.root_of(&edge.parent()), self.root_of(&edge.child())) {
-            (Ok(left), Ok(right)) => {
-                if left == right {
-                    self.add_weak_edge(edge);
-                    return;
+        metrics! {
+            // Insert edge and update indexes avoiding making closed chains
+            match (self.root_of(&edge.parent()), self.root_of(&edge.child())) {
+                (Ok(left), Ok(right)) => {
+                    if left == right {
+                        self.add_weak_edge(edge);
+                        return;
+                    }
                 }
+                _ => (),
             }
-            _ => (),
         }
 
         self.edge.insert(DirectedEdge::from(&edge), edge.clone());
 
-        match self.children.get_mut(&edge.parent()) {
-            Some(children) => {
-                children.insert(edge.child().clone());
-            }
-            None => {
-                self.children.insert(
-                    edge.parent().clone(),
-                    HashSet::from_iter([edge.child().clone()].iter().cloned()),
-                );
-            }
-        };
+        metrics! {
+            match self.children.get_mut(&edge.parent()) {
+                Some(children) => {
+                    children.insert(edge.child().clone());
+                }
+                None => {
+                    self.children.insert(
+                        edge.parent().clone(),
+                        HashSet::from_iter([edge.child().clone()].iter().cloned()),
+                    );
+                }
+            };
+        }
 
-        self.parent
-            .insert(edge.child().clone(), edge.parent().clone());
+        metrics! {
+            self.parent
+                .insert(edge.child().clone(), edge.parent().clone());
+        }
     }
 
     pub fn add_weak_edge(&mut self, edge: &TEdge) {
@@ -109,6 +127,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         self.edge.get(arrow)
     }
 
+    #[cfg(feature = "metrics")]
     pub fn children_of(
         &self,
         parent: &<TEdge::Node as Node>::NodeIndex,
@@ -116,6 +135,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         self.children.get(parent)
     }
 
+    #[cfg(feature = "metrics")]
     pub fn parent_of(
         &self,
         child: &<TEdge::Node as Node>::NodeIndex,
@@ -123,6 +143,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         self.parent.get(child)
     }
 
+    #[cfg(feature = "metrics")]
     pub fn root_of<'a>(
         &'a self,
         node: &'a <TEdge::Node as Node>::NodeIndex,
@@ -136,6 +157,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         }
     }
 
+    #[cfg(feature = "metrics")]
     fn __rank_of(
         &self,
         node: &<TEdge::Node as Node>::NodeIndex,
@@ -147,10 +169,12 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         }
     }
 
+    #[cfg(feature = "metrics")]
     pub fn rank_of(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Result<usize, TEdge> {
         self.__rank_of(node, 0)
     }
 
+    #[cfg(feature = "metrics")]
     pub fn predecessors_of(
         &self,
         node: &<TEdge::Node as Node>::NodeIndex,
@@ -170,6 +194,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         }
     }
 
+    #[cfg(feature = "metrics")]
     pub fn self_and_its_predecessors_of(
         &self,
         node: &<TEdge::Node as Node>::NodeIndex,
@@ -182,6 +207,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         Ok(res)
     }
 
+    #[cfg(feature = "metrics")]
     pub fn leaves(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         self.children
             .iter()
@@ -190,6 +216,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             .collect()
     }
 
+    #[cfg(feature = "metrics")]
     pub fn roots(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         self.node
             .keys()
@@ -213,6 +240,9 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                 write!(file, "  node [\n")?;
                 write!(file, "    id {}\n", id)?;
                 write!(file, "    label \"{}\"\n", index.0)?;
+                metrics! {
+                write!(file, "    rank {}\n", self.rank_of(index.0)?)?;
+                }
                 write!(file, "  ]\n")?;
             }
         }
@@ -242,12 +272,15 @@ mod tests {
     extern crate std;
 
     use crate::edge::basic_edge::BasicEdge;
+    #[allow(unused_imports)]
     use crate::error::GraphError;
     use crate::graph::directed_graph::DirectedGraph;
+    use crate::metrics;
     use crate::node::basic_node::BasicNode;
     use crate::node::node_index::NodeIndex;
     use crate::node::Node;
     use alloc::string::String;
+    #[allow(unused_imports)]
     use alloc::vec;
     use alloc::vec::Vec;
     use difference::Changeset;
@@ -278,6 +311,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "metrics")]
     fn test_directed_graph_edge() {
         let node_1_index = String::from("node_1");
         let node_2_index = String::from("node_2");
@@ -358,15 +392,20 @@ mod tests {
             HashSet::from_iter([&node_1_index, &node_2_index, &node_3_index])
         );
 
-        assert_eq!(
-            graph.leaves(),
-            HashSet::from_iter(vec![&node_2_index, &node_3_index])
-        );
+        metrics! {
+            assert_eq!(
+                graph.leaves(),
+                HashSet::from_iter(vec![&node_2_index, &node_3_index])
+            );
+        }
 
-        assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
+        metrics! {
+            assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
+        }
     }
 
     #[test]
+    #[cfg(feature = "metrics")]
     fn test_directed_graph_cycle_graph() {
         let node_1_index = String::from("node_1");
         let node_2_index = String::from("node_2");
