@@ -20,7 +20,7 @@ use hashbrown::{HashMap, HashSet};
 /// DirectedGraph:
 /// * assumes edge is *directed*.
 /// * can hold nodes that satisfies:
-///     * each of node can have *only one parent*
+///     * ~~each of node can have *only one parent*~~
 /// * With `metrics` feature: avoids cycled path. A edge makes a cycle is to be ignored and it is treated as *weak edge* (See implementation of DirectedGraph::add_edge())
 /// * Without `metrics` feature: can be hold cycled path.
 #[derive(Debug, Clone)]
@@ -116,10 +116,11 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             };
         }
 
-        metrics! {
+        metrics! {{
+            // debug_assert_eq!(self.parent.contains_key(edge.child()), false);
             self.parent
                 .insert(edge.child().clone(), edge.parent().clone());
-        }
+        }}
     }
 
     pub fn add_weak_edge(&mut self, edge: &TEdge) {
@@ -250,7 +251,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                 write!(file, "    label \"{}\"\n", index.0)?;
                 metrics! {{
                     write!(file, "    rank {}\n", self.rank_of(index.0)?)?;
-                    write!(file, "    root \"{}\"\n", self.root_of(index.0)?)?;
+                    write!(file, "    is_root {}\n", if self.root_of(index.0)? == index.0 { 1 } else { 0 })?;
                 }}
                 write!(file, "  ]\n")?;
             }
