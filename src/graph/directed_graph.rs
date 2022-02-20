@@ -17,9 +17,12 @@ use hashbrown::hash_map::Values;
 #[allow(unused_imports)]
 use hashbrown::{HashMap, HashSet};
 
-/// Assumes edge is *directed*.
-/// * With `metrics` feature: DirectedGraph avoids cycled path. A edge makes a cycle is to be ignored and it is treated as *weak edge* (See implementation of DirectedGraph::add_edge())
-/// * Without `metrics` feature: DirectedGraph can be hold cycled path.
+/// DirectedGraph:
+/// * assumes edge is *directed*.
+/// * can hold nodes that satisfies:
+///     * each of node can have *only one parent*
+/// * With `metrics` feature: avoids cycled path. A edge makes a cycle is to be ignored and it is treated as *weak edge* (See implementation of DirectedGraph::add_edge())
+/// * Without `metrics` feature: can be hold cycled path.
 #[derive(Debug, Clone)]
 pub struct DirectedGraph<TEdge: Edge> {
     // Metadata
@@ -245,9 +248,10 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                 write!(file, "  node [\n")?;
                 write!(file, "    id {}\n", id)?;
                 write!(file, "    label \"{}\"\n", index.0)?;
-                metrics! {
-                write!(file, "    rank {}\n", self.rank_of(index.0)?)?;
-                }
+                metrics! {{
+                    write!(file, "    rank {}\n", self.rank_of(index.0)?)?;
+                    write!(file, "    root \"{}\"\n", self.root_of(index.0)?)?;
+                }}
                 write!(file, "  ]\n")?;
             }
         }
@@ -370,6 +374,7 @@ mod tests {
 
         assert_eq!(graph.root_of(&node_1_index), Ok(&node_1_index));
         assert_eq!(graph.root_of(&node_4_index), Ok(&node_1_index));
+        assert_eq!(graph.root_of(&node_5_index), Ok(&node_1_index));
         assert_eq!(
             graph.root_of(&no_such_node_sha1),
             Err(GraphError::NodeNotExists(no_such_node_sha1.clone()))
