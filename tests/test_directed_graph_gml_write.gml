@@ -24,13 +24,16 @@ graph [
   edge [
     source 0
     target 1
+    label "1->2"
   ]
   edge [
     source 0
     target 2
+    label "1->3"
   ]
   edge [
     source 2
     target 3
+    label "3->4"
   ]
 ]

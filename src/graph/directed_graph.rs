@@ -17,9 +17,13 @@ use hashbrown::hash_map::Values;
 #[allow(unused_imports)]
 use hashbrown::{HashMap, HashSet};
 
+/// Assumes edge is *directed*.
+/// * With `metrics` feature: DirectedGraph avoids cycled path. A edge makes a cycle is to be ignored and it is treated as *weak edge* (See implementation of DirectedGraph::add_edge())
+/// * Without `metrics` feature: DirectedGraph can be hold cycled path.
 #[derive(Debug, Clone)]
 pub struct DirectedGraph<TEdge: Edge> {
     // Metadata
+    /// Graph name
     name: String,
 
     // Stores real data
@@ -81,6 +85,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
 
         metrics! {
             // Insert edge and update indexes avoiding making closed chains
+            // NOTE: Cannot support this workaround without `metrics` feature
             match (self.root_of(&edge.parent()), self.root_of(&edge.child())) {
                 (Ok(left), Ok(right)) => {
                     if left == right {
@@ -247,8 +252,8 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             }
         }
         {
-            let heap: BinaryHeap<Reverse<&DirectedEdge<TEdge>>> =
-                self.edge.keys().map(|v| Reverse(v)).collect();
+            let heap: BinaryHeap<Reverse<&TEdge>> =
+                self.edge.values().map(|v| Reverse(v)).collect();
             for edge in heap.into_iter_sorted() {
                 if let (Some(source), Some(target)) = (
                     index_to_id.get(edge.0.parent()),
@@ -257,6 +262,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                     write!(file, "  edge [\n")?;
                     write!(file, "    source {}\n", source)?;
                     write!(file, "    target {}\n", target)?;
+                    write!(file, "    label \"{}\"\n", edge.0.label())?;
                     write!(file, "  ]\n")?;
                 }
             }
@@ -335,10 +341,26 @@ mod tests {
         graph.add_node(&TestGraphNode::new(&node_3_index));
         graph.add_node(&TestGraphNode::new(&node_4_index));
         graph.add_node(&TestGraphNode::new(&node_5_index));
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_2_index));
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_3_index));
-        graph.add_edge(&TestGraphEdge::new(&node_3_index, &node_4_index));
-        graph.add_edge(&TestGraphEdge::new(&node_4_index, &node_5_index));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_2_index,
+            String::from("1->2"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_3_index,
+            String::from("1->3"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_3_index,
+            &node_4_index,
+            String::from("3->4"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_4_index,
+            &node_5_index,
+            String::from("4->5"),
+        ));
 
         println!("[*] graph = {:#?}", graph);
 
@@ -381,8 +403,16 @@ mod tests {
            / \
          (2) (3)
         */
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_2_index));
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_3_index));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_2_index,
+            String::from("1->2"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_3_index,
+            String::from("1->3"),
+        ));
 
         assert_eq!(
             graph
@@ -417,9 +447,21 @@ mod tests {
            / \
          (2)-(3)
         */
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_2_index));
-        graph.add_edge(&TestGraphEdge::new(&node_2_index, &node_3_index));
-        graph.add_edge(&TestGraphEdge::new(&node_3_index, &node_1_index));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_2_index,
+            String::from("1->2"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_2_index,
+            &node_3_index,
+            String::from("2->3"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_3_index,
+            &node_1_index,
+            String::from("3->1"),
+        ));
 
         assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
     }
@@ -430,9 +472,9 @@ mod tests {
         impl NodeIndex for u64 {}
 
         let mut graph = DirectedGraph::new(String::from("test"));
-        graph.add_edge(&Edge::new(&0x421493, &0x41c2d9));
-        graph.add_edge(&Edge::new(&0x41c2d9, &0x402566));
-        graph.add_edge(&Edge::new(&0x41c33c, &0x421493));
+        graph.add_edge(&Edge::new(&0x421493, &0x41c2d9, String::from("1")));
+        graph.add_edge(&Edge::new(&0x41c2d9, &0x402566, String::from("2")));
+        graph.add_edge(&Edge::new(&0x41c33c, &0x421493, String::from("3")));
     }
 
     #[test]
@@ -450,9 +492,21 @@ mod tests {
               |
              (4)
         */
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_2_index));
-        graph.add_edge(&TestGraphEdge::new(&node_1_index, &node_3_index));
-        graph.add_edge(&TestGraphEdge::new(&node_3_index, &node_4_index));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_2_index,
+            String::from("1->2"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_3_index,
+            String::from("1->3"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_3_index,
+            &node_4_index,
+            String::from("3->4"),
+        ));
 
         let mut out_gml = io::Cursor::new(Vec::new());
         assert!(graph.gml_write(&mut out_gml).is_ok());
