@@ -216,6 +216,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         Ok(res)
     }
 
+    /// Collects leaves (i.e. nodes that does not have children) from entire this graph
     #[cfg(feature = "metrics")]
     pub fn leaves(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         self.children
@@ -225,12 +226,35 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             .collect()
     }
 
+    /// Collects leaves (i.e. nodes that does not have children) of given node
+    #[cfg(feature = "metrics")]
+    pub fn leaves_of<'a>(&'a self, node: &'a <TEdge::Node as Node>::NodeIndex) -> Result<HashSet<&'a <TEdge::Node as Node>::NodeIndex>, TEdge> {
+        let children = match self.children_of(node){
+            Some(children) => children,
+            None => return Err(GraphError::NodeNotExists(node.clone())),
+        };
+        if children.len() == 0 {
+            return Ok(HashSet::from_iter([node]))
+        }
+        let mut result = HashSet::with_capacity(8);
+        for child in children {
+            for n in self.leaves_of(child)? {
+                result.insert(n);
+            }
+        }
+        Ok(result)
+    }
+
     #[cfg(feature = "metrics")]
     pub fn roots(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         self.node
             .keys()
             .filter(|v| self.parent_of(v).is_none())
             .collect()
+    }
+
+    pub fn is_root(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Result<bool, TEdge> {
+        Ok(self.root_of(node)? == node)
     }
 
     pub fn gml_write<T: io::Write>(&self, file: &mut T) -> Result<(), TEdge> {
@@ -251,7 +275,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                 write!(file, "    label \"{}\"\n", index.0)?;
                 metrics! {{
                     write!(file, "    rank {}\n", self.rank_of(index.0)?)?;
-                    write!(file, "    is_root {}\n", if self.root_of(index.0)? == index.0 { 1 } else { 0 })?;
+                    write!(file, "    is_root {}\n", if self.is_root(index.0)? { 1 } else { 0 })?;
                 }}
                 write!(file, "  ]\n")?;
             }
@@ -389,6 +413,14 @@ mod tests {
         assert_eq!(
             graph.leaves(),
             HashSet::from_iter(vec![&node_2_index, &node_5_index])
+        );
+        assert_eq!(
+            graph.leaves_of(&node_1_index),
+            Ok(HashSet::from_iter([&node_2_index, &node_5_index]))
+        );
+        assert_eq!(
+            graph.leaves_of(&node_3_index),
+            Ok(HashSet::from_iter([&node_5_index]))
         );
 
         assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
