@@ -233,10 +233,11 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             Some(children) => children,
             None => return Err(GraphError::NodeNotExists(node.clone())),
         };
-        if children.len() == 0 {
-            return Ok(HashSet::from_iter([node]))
-        }
         let mut result = HashSet::with_capacity(8);
+        if children.len() == 0 {
+            result.insert(node);
+            return Ok(result)
+        }
         for child in children {
             for n in self.leaves_of(child)? {
                 result.insert(n);
