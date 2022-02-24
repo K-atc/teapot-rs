@@ -86,6 +86,12 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             self.add_node(&TEdge::Node::implicit_new(&edge.child()))
         }
 
+        if edge.parent() == edge.child() {
+            // This is self loop
+            self.add_weak_edge(edge);
+            return
+        }
+
         metrics! {
             // Insert edge and update indexes avoiding making closed chains
             // NOTE: Cannot support this workaround without `metrics` feature
@@ -153,17 +159,29 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     }
 
     #[cfg(feature = "metrics")]
-    pub fn root_of<'a>(
+    fn __root_of<'a>(
         &'a self,
         node: &'a <TEdge::Node as Node>::NodeIndex,
+        ttl: usize
     ) -> Result<&'a <TEdge::Node as Node>::NodeIndex, TEdge> {
+        if ttl == 0 {
+            return Err(GraphError::ReachedRecursionLimit)
+        }
         if self.get_node(node).is_none() {
             return Err(GraphError::NodeNotExists(node.clone()));
         }
         match self.parent_of(node) {
-            Some(parent) => self.root_of(parent),
+            Some(parent) => self.__root_of(parent, ttl - 1),
             None => Ok(node),
         }
+    }
+
+    #[cfg(feature = "metrics")]
+    pub fn root_of<'a>(
+        &'a self,
+        node: &'a <TEdge::Node as Node>::NodeIndex,
+    ) -> Result<&'a <TEdge::Node as Node>::NodeIndex, TEdge> {
+        self.__root_of(node, self.node.len())
     }
 
     #[cfg(feature = "metrics")]
@@ -216,31 +234,37 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         Ok(res)
     }
 
+    pub fn is_oh_the_path_from(&self, from: &<TEdge::Node as Node>::NodeIndex, to:  &<TEdge::Node as Node>::NodeIndex) -> bool {
+        if from == to {
+            return true
+        }
+        match self.parent_of(from) {
+            Some(parent) => if parent == to { true } else { self.is_oh_the_path_from(parent, to) }
+            None => false
+        }
+    }
+
     /// Collects leaves (i.e. nodes that does not have children) from entire this graph
     #[cfg(feature = "metrics")]
     pub fn leaves(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
-        self.children
+        let mut result = HashSet::with_capacity(8); // NOTE: Do not use collect(); HashSet::with_capacity() avoids assertion fail in Intel Pin
+        for child in self.children
             .iter()
             .filter(|(_, v)| v.len() == 0)
             .map(|(k, _)| k)
-            .collect()
+        {
+            result.insert(child);
+        }
+        result
     }
 
     /// Collects leaves (i.e. nodes that does not have children) of given node
     #[cfg(feature = "metrics")]
     pub fn leaves_of<'a>(&'a self, node: &'a <TEdge::Node as Node>::NodeIndex) -> Result<HashSet<&'a <TEdge::Node as Node>::NodeIndex>, TEdge> {
-        let children = match self.children_of(node){
-            Some(children) => children,
-            None => return Err(GraphError::NodeNotExists(node.clone())),
-        };
         let mut result = HashSet::with_capacity(8);
-        if children.len() == 0 {
-            result.insert(node);
-            return Ok(result)
-        }
-        for child in children {
-            for n in self.leaves_of(child)? {
-                result.insert(n);
+        for leaf in self.leaves() {
+            if self.is_oh_the_path_from(leaf, node) {
+                result.insert(leaf);
             }
         }
         Ok(result)
@@ -503,6 +527,34 @@ mod tests {
         ));
 
         assert_eq!(graph.roots(), HashSet::from_iter(vec![&node_1_index]));
+        assert_eq!(graph.root_of(&node_2_index), Ok(&node_1_index));
+        assert_eq!(graph.root_of(&node_3_index), Ok(&node_1_index));
+    }
+
+    #[test]
+    fn test_directed_graph_with_self_loop() {
+        let node_1_index = String::from("node_1");
+        let node_2_index = String::from("node_2");
+
+        let mut graph = DirectedGraph::new(String::from("test"));
+        /*
+           (1)
+            |
+           (2)
+         　 ↺
+        */
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_2_index,
+            String::from("1->2"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_2_index,
+            &node_2_index,
+            String::from("2->2"),
+        ));
+
+        assert_eq!(graph.parent_of(&node_2_index), Some(&node_1_index));
     }
 
     #[test]

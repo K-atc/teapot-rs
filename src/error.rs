@@ -8,6 +8,7 @@ use core::convert::From;
 pub enum GraphError<TNode: Node> {
     NodeNotExists(TNode::NodeIndex),
     IoError(String),
+    ReachedRecursionLimit,
 }
 
 impl<TNode: Node> From<io::Error> for GraphError<TNode> {
