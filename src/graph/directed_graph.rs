@@ -246,6 +246,8 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         Ok(res)
     }
 
+    /// Checks if nodes *from* and *to* is on the same path
+    #[cfg(feature = "metrics")]
     pub fn is_oh_the_path_from(&self, from: &<TEdge::Node as Node>::NodeIndex, to:  &<TEdge::Node as Node>::NodeIndex) -> bool {
         if from == to {
             return true
@@ -290,6 +292,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             .collect()
     }
 
+    #[cfg(feature = "metrics")]
     pub fn is_root(&self, node: &<TEdge::Node as Node>::NodeIndex) -> Result<bool, TEdge> {
         Ok(self.root_of(node)? == node)
     }
