@@ -13,6 +13,7 @@ use alloc::vec;
 #[allow(unused_imports)]
 use alloc::vec::Vec;
 use core::cmp::Reverse;
+use core::fmt;
 use hashbrown::hash_map::Values;
 #[allow(unused_imports)]
 use hashbrown::{HashMap, HashSet};
@@ -39,6 +40,17 @@ pub struct DirectedGraph<TEdge: Edge> {
     children: HashMap<<TEdge::Node as Node>::NodeIndex, HashSet<<TEdge::Node as Node>::NodeIndex>>,
     #[cfg(feature = "metrics")]
     parent: HashMap<<TEdge::Node as Node>::NodeIndex, <TEdge::Node as Node>::NodeIndex>,
+}
+
+impl<TEdge: Edge> fmt::Display for DirectedGraph<TEdge> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{\n")?;
+        for edge in self.edge.keys() {
+            write!(f, "\t{:?} -> {:?}\n", edge.parent(), edge.child())?;
+        }
+        write!(f, "}}")?;
+        Ok(())
+    }
 }
 
 impl<TEdge: Edge> DirectedGraph<TEdge> {
