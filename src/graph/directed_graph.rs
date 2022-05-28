@@ -570,7 +570,7 @@ mod tests {
         ));
 
         metrics! {
-            assert_eq(graph.parent_of(&node_2_index), Some(&node_1_index));
+            assert_eq!(graph.parent_of(&node_2_index), Some(&node_1_index));
         }
     }
 
