@@ -340,6 +340,37 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
 
         Ok(())
     }
+
+    pub fn dot_write<T: io::Write>(&self, file: &mut T) -> Result<(), TEdge> {
+        write!(file, "digraph {{\n")?;
+
+        let mut index_to_id = HashMap::with_capacity(self.node.len());
+
+        {
+            let heap: BinaryHeap<Reverse<&<TEdge::Node as Node>::NodeIndex>> =
+                self.node.keys().map(|v| Reverse(v)).collect();
+            for (id, index) in heap.into_iter_sorted().enumerate() {
+                index_to_id.insert(index.0, id);
+
+                write!(file, "  {} [label=\"{}\"]\n", id, index.0)?;
+            }
+        }
+        {
+            let heap: BinaryHeap<Reverse<&TEdge>> =
+                self.edge.values().map(|v| Reverse(v)).collect();
+            for edge in heap.into_iter_sorted() {
+                if let (Some(source), Some(target)) = (
+                    index_to_id.get(edge.0.parent()),
+                    index_to_id.get(edge.0.child()),
+                ) {
+                    write!(file, "  {} -> {} [label=\"{}\"]\n", source, target, edge.0.label())?;
+                }
+            }
+        }
+        write!(file, "}}\n")?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -586,7 +617,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directed_graph_gml_write() {
+    fn test_directed_graph_xxx_write() {
         let node_1_index = String::from("node_1");
         let node_2_index = String::from("node_2");
         let node_3_index = String::from("node_3");
@@ -616,25 +647,47 @@ mod tests {
             String::from("3->4"),
         ));
 
-        let mut out_gml = io::Cursor::new(Vec::new());
-        assert!(graph.gml_write(&mut out_gml).is_ok());
+        {
+            let mut out_gml = io::Cursor::new(Vec::new());
+            assert!(graph.gml_write(&mut out_gml).is_ok());
 
-        // #[cfg(feature = "metrics")]
-        // let mut true_file = File::open("tests/test_directed_graph_gml_write.gml").unwrap();
-        // #[cfg(not(feature = "metrics"))]
-        let mut true_file = File::open("tests/test_directed_graph_gml_write.minimal.gml").unwrap();
-        let mut true_gml = Vec::new();
-        assert!(true_file.read_to_end(&mut true_gml).is_ok());
+            // #[cfg(feature = "metrics")]
+            // let mut true_file = File::open("tests/test_directed_graph_gml_write.gml").unwrap();
+            // #[cfg(not(feature = "metrics"))]
+            let mut true_file = File::open("tests/test_directed_graph_xxx_write.minimal.gml").unwrap();
+            let mut true_gml = Vec::new();
+            assert!(true_file.read_to_end(&mut true_gml).is_ok());
 
-        println!(
-            "{}",
-            Changeset::new(
-                str::from_utf8(true_gml.as_slice()).unwrap(),
-                str::from_utf8(out_gml.get_ref()).unwrap(),
-                ""
-            )
-        );
+            println!(
+                "{}",
+                Changeset::new(
+                    str::from_utf8(true_gml.as_slice()).unwrap(),
+                    str::from_utf8(out_gml.get_ref()).unwrap(),
+                    ""
+                )
+            );
 
-        assert_eq!(out_gml.get_ref(), &true_gml);
+            assert_eq!(out_gml.get_ref(), &true_gml);
+        }
+
+        {
+            let mut out_dot = io::Cursor::new(Vec::new());
+            assert!(graph.dot_write(&mut out_dot).is_ok());
+
+            let mut true_file = File::open("tests/test_directed_graph_xxx_write.minimal.dot").unwrap();
+            let mut true_dot = Vec::new();
+            assert!(true_file.read_to_end(&mut true_dot).is_ok());
+
+            println!(
+                "{}",
+                Changeset::new(
+                    str::from_utf8(true_dot.as_slice()).unwrap(),
+                    str::from_utf8(out_dot.get_ref()).unwrap(),
+                    ""
+                )
+            );
+
+            assert_eq!(out_dot.get_ref(), &true_dot);
+        }
     }
 }
