@@ -21,7 +21,8 @@ use hashbrown::{HashMap, HashSet};
 /// DirectedGraph:
 /// * assumes edge is *directed*.
 /// * can hold nodes that satisfies:
-///     * ~~each of node can have *only one parent*~~
+///     * a given node can have only one root node
+///     * ~~each of node has only one parent~~
 /// * With `metrics` feature: avoids cycled path. A edge makes a cycle is to be ignored and it is treated as *weak edge* (See implementation of DirectedGraph::add_edge())
 /// * Without `metrics` feature: can be hold cycled path.
 #[derive(Debug, Clone)]
@@ -247,13 +248,12 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     }
 
     /// Checks if nodes *from* and *to* is on the same path
-    #[cfg(feature = "metrics")]
-    pub fn is_oh_the_path_from(&self, from: &<TEdge::Node as Node>::NodeIndex, to:  &<TEdge::Node as Node>::NodeIndex) -> bool {
+    pub fn are_on_the_path(&self, from: &<TEdge::Node as Node>::NodeIndex, to: &<TEdge::Node as Node>::NodeIndex) -> bool {
         if from == to {
             return true
         }
         match self.parent_of(from) {
-            Some(parent) => if parent == to { true } else { self.is_oh_the_path_from(parent, to) }
+            Some(parent) => if parent == to { true } else { self.are_on_the_path(parent, to) }
             None => false
         }
     }
@@ -277,7 +277,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     pub fn leaves_of<'a>(&'a self, node: &'a <TEdge::Node as Node>::NodeIndex) -> Result<HashSet<&'a <TEdge::Node as Node>::NodeIndex>, TEdge> {
         let mut result = HashSet::with_capacity(8);
         for leaf in self.leaves() {
-            if self.is_oh_the_path_from(leaf, node) {
+            if self.are_on_the_path(leaf, node) {
                 result.insert(leaf);
             }
         }
@@ -467,6 +467,9 @@ mod tests {
         assert_eq!(graph.parent_of(&node_1_index), None);
         assert_eq!(graph.parent_of(&node_2_index), Some(&node_1_index));
         assert_eq!(graph.parent_of(&node_3_index), Some(&node_1_index));
+
+        assert!(graph.are_on_the_path(&node_2_index, &node_1_index));
+        assert!(graph.are_on_the_path(&node_5_index, &node_1_index));
 
         assert_eq!(graph.root_of(&node_1_index), Ok(&node_1_index));
         assert_eq!(graph.root_of(&node_4_index), Ok(&node_1_index));

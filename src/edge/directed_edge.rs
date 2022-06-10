@@ -2,6 +2,7 @@ use crate::edge::Edge;
 use crate::node::Node;
 use core::hash::{Hash, Hasher};
 
+// parent ---> child
 #[derive(Debug, Clone, Ord, PartialOrd)]
 pub struct DirectedEdge<TEdge: Edge> {
     parent: <TEdge::Node as Node>::NodeIndex,
