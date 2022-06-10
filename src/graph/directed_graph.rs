@@ -102,7 +102,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         if edge.parent() == edge.child() {
             // This is self loop
             self.add_weak_edge(edge);
-            return
+            return;
         }
 
         metrics! {
@@ -175,10 +175,10 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     fn __root_of<'a>(
         &'a self,
         node: &'a <TEdge::Node as Node>::NodeIndex,
-        ttl: usize
+        ttl: usize,
     ) -> Result<&'a <TEdge::Node as Node>::NodeIndex, TEdge> {
         if ttl == 0 {
-            return Err(GraphError::ReachedRecursionLimit)
+            return Err(GraphError::ReachedRecursionLimit);
         }
         if self.get_node(node).is_none() {
             return Err(GraphError::NodeNotExists(node.clone()));
@@ -248,13 +248,23 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     }
 
     /// Checks if nodes *from* and *to* is on the same path
-    pub fn are_on_the_path(&self, from: &<TEdge::Node as Node>::NodeIndex, to: &<TEdge::Node as Node>::NodeIndex) -> bool {
+    pub fn are_on_the_path(
+        &self,
+        from: &<TEdge::Node as Node>::NodeIndex,
+        to: &<TEdge::Node as Node>::NodeIndex,
+    ) -> bool {
         if from == to {
-            return true
+            return true;
         }
         match self.parent_of(from) {
-            Some(parent) => if parent == to { true } else { self.are_on_the_path(parent, to) }
-            None => false
+            Some(parent) => {
+                if parent == to {
+                    true
+                } else {
+                    self.are_on_the_path(parent, to)
+                }
+            }
+            None => false,
         }
     }
 
@@ -262,7 +272,8 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     #[cfg(feature = "metrics")]
     pub fn leaves(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
         let mut result = HashSet::with_capacity(8); // NOTE: Do not use collect(); HashSet::with_capacity() avoids assertion fail in Intel Pin
-        for child in self.children
+        for child in self
+            .children
             .iter()
             .filter(|(_, v)| v.len() == 0)
             .map(|(k, _)| k)
@@ -274,7 +285,10 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
 
     /// Collects leaves (i.e. nodes that does not have children) of given node
     #[cfg(feature = "metrics")]
-    pub fn leaves_of<'a>(&'a self, node: &'a <TEdge::Node as Node>::NodeIndex) -> Result<HashSet<&'a <TEdge::Node as Node>::NodeIndex>, TEdge> {
+    pub fn leaves_of<'a>(
+        &'a self,
+        node: &'a <TEdge::Node as Node>::NodeIndex,
+    ) -> Result<HashSet<&'a <TEdge::Node as Node>::NodeIndex>, TEdge> {
         let mut result = HashSet::with_capacity(8);
         for leaf in self.leaves() {
             if self.are_on_the_path(leaf, node) {
@@ -363,7 +377,13 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                     index_to_id.get(edge.0.parent()),
                     index_to_id.get(edge.0.child()),
                 ) {
-                    write!(file, "  {} -> {} [label=\"{}\"]\n", source, target, edge.0.label())?;
+                    write!(
+                        file,
+                        "  {} -> {} [label=\"{}\"]\n",
+                        source,
+                        target,
+                        edge.0.label()
+                    )?;
                 }
             }
         }
@@ -590,7 +610,7 @@ mod tests {
            (1)
             |
            (2)
-         　 ↺
+         ↺
         */
         graph.add_edge(&TestGraphEdge::new(
             &node_1_index,
@@ -657,7 +677,8 @@ mod tests {
             // #[cfg(feature = "metrics")]
             // let mut true_file = File::open("tests/test_directed_graph_gml_write.gml").unwrap();
             // #[cfg(not(feature = "metrics"))]
-            let mut true_file = File::open("tests/test_directed_graph_xxx_write.minimal.gml").unwrap();
+            let mut true_file =
+                File::open("tests/test_directed_graph_xxx_write.minimal.gml").unwrap();
             let mut true_gml = Vec::new();
             assert!(true_file.read_to_end(&mut true_gml).is_ok());
 
@@ -677,7 +698,8 @@ mod tests {
             let mut out_dot = io::Cursor::new(Vec::new());
             assert!(graph.dot_write(&mut out_dot).is_ok());
 
-            let mut true_file = File::open("tests/test_directed_graph_xxx_write.minimal.dot").unwrap();
+            let mut true_file =
+                File::open("tests/test_directed_graph_xxx_write.minimal.dot").unwrap();
             let mut true_dot = Vec::new();
             assert!(true_file.read_to_end(&mut true_dot).is_ok());
 
@@ -692,5 +714,32 @@ mod tests {
 
             assert_eq!(out_dot.get_ref(), &true_dot);
         }
+    }
+
+    #[test]
+    fn test_directed_graph_multi_root() {
+        let node_1_index = String::from("node_1");
+        let node_2_index = String::from("node_2");
+        let node_3_index = String::from("node_3");
+
+        let mut graph = DirectedGraph::new(String::from("test"));
+        /*
+          (1) (3)
+            \ /
+            (2)
+        */
+        graph.add_edge(&TestGraphEdge::new(
+            &node_1_index,
+            &node_2_index,
+            String::from("1->2"),
+        ));
+        graph.add_edge(&TestGraphEdge::new(
+            &node_3_index,
+            &node_2_index,
+            String::from("3->2"),
+        ));
+
+        assert!(graph.are_on_the_path(&node_2_index, &node_1_index));
+        assert!(graph.are_on_the_path(&node_2_index, &node_3_index));
     }
 }

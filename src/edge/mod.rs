@@ -2,8 +2,8 @@ pub mod basic_edge;
 pub mod directed_edge;
 
 use crate::node::Node;
-use core::fmt::Debug;
 use alloc::string::String;
+use core::fmt::Debug;
 
 pub trait Edge: Debug + Clone + Ord + PartialOrd + Default {
     type Node: Node;
