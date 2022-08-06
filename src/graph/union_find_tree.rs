@@ -20,10 +20,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
         self.parent.insert(x.clone(), x.clone());
     }
 
-    pub fn find(
-        &self,
-        child: &TNode::NodeIndex,
-    ) -> Result<TNode::NodeIndex, BasicEdge<TNode::NodeIndex>> {
+    pub fn find(&self, child: &TNode::NodeIndex) -> Result<TNode::NodeIndex, BasicEdge<TNode>> {
         match self.parent.get(&child) {
             Some(parent) => {
                 if parent == child {
@@ -40,7 +37,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
         &mut self,
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
-    ) -> Result<(), BasicEdge<TNode::NodeIndex>> {
+    ) -> Result<(), BasicEdge<TNode>> {
         let x = self.find(&x)?;
         let y = self.find(&y)?;
 
@@ -56,7 +53,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
         &self,
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
-    ) -> Result<bool, BasicEdge<TNode::NodeIndex>> {
+    ) -> Result<bool, BasicEdge<TNode>> {
         Ok(self.find(x)? == self.find(y)?)
     }
 }

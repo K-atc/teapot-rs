@@ -6,6 +6,7 @@ use crate::io;
 use crate::metrics;
 use crate::node::Node;
 use crate::result::Result;
+
 use alloc::collections::binary_heap::BinaryHeap;
 use alloc::string::String;
 #[allow(unused_imports)]
@@ -361,6 +362,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         let mut index_to_id = HashMap::with_capacity(self.node.len());
 
         {
+            // Write nodes
             let heap: BinaryHeap<Reverse<&TEdge::Node>> =
                 self.node.values().map(|v| Reverse(v)).collect();
             for (id, node) in heap.into_iter_sorted().enumerate() {
@@ -370,6 +372,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             }
         }
         {
+            // Write edges
             let heap: BinaryHeap<Reverse<&TEdge>> =
                 self.edge.values().map(|v| Reverse(v)).collect();
             for edge in heap.into_iter_sorted() {
@@ -377,13 +380,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                     index_to_id.get(edge.0.parent()),
                     index_to_id.get(edge.0.child()),
                 ) {
-                    write!(
-                        file,
-                        "  {} -> {} [label=\"{}\"]\n",
-                        source,
-                        target,
-                        edge.0
-                    )?;
+                    write!(file, "  {} -> {} [label=\"{}\"]\n", source, target, edge.0)?;
                 }
             }
         }
@@ -405,6 +402,7 @@ mod tests {
     use crate::node::basic_node::BasicNode;
     use crate::node::node_index::NodeIndex;
     use crate::node::Node;
+
     use alloc::string::String;
     #[allow(unused_imports)]
     use alloc::vec;
@@ -418,7 +416,7 @@ mod tests {
     use std::str;
 
     type TestGraphNode = BasicNode<String>;
-    type TestGraphEdge = BasicEdge<String>;
+    type TestGraphEdge = BasicEdge<TestGraphNode>;
 
     #[test]
     fn test_directed_graph_node() {
@@ -628,7 +626,7 @@ mod tests {
 
     #[test]
     fn test_directed_graph_real_sample() {
-        type Edge = BasicEdge<u64>;
+        type Edge = BasicEdge<BasicNode<u64>>;
         impl NodeIndex for u64 {}
 
         let mut graph = DirectedGraph::new(String::from("test"));

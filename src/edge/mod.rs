@@ -3,7 +3,7 @@ pub mod directed_edge;
 
 use crate::node::Node;
 use alloc::string::String;
-use core::fmt::{Display, Debug};
+use core::fmt::{Debug, Display};
 
 pub trait Edge: Display + Debug + Clone + Ord + PartialOrd + Default {
     type Node: Node;

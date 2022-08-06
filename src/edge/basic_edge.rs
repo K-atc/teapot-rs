@@ -1,18 +1,21 @@
 use crate::edge::Edge;
-use crate::node::basic_node::BasicNode;
-use crate::node::node_index::NodeIndex;
+use crate::node::Node;
 use alloc::string::String;
 use std::fmt;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
-pub struct BasicEdge<T: NodeIndex> {
-    parent: T,
-    child: T,
+pub struct BasicEdge<T: Node> {
+    parent: <T as Node>::NodeIndex,
+    child: <T as Node>::NodeIndex,
     label: String,
 }
 
-impl<T: NodeIndex> BasicEdge<T> {
-    pub fn new(parent: &T, child: &T, label: String) -> Self {
+impl<T: Node> BasicEdge<T> {
+    pub fn new(
+        parent: &<T as Node>::NodeIndex,
+        child: &<T as Node>::NodeIndex,
+        label: String,
+    ) -> Self {
         Self {
             parent: parent.clone(),
             child: child.clone(),
@@ -21,14 +24,14 @@ impl<T: NodeIndex> BasicEdge<T> {
     }
 }
 
-impl<T: NodeIndex> Edge for BasicEdge<T> {
-    type Node = BasicNode<T>;
+impl<T: Node> Edge for BasicEdge<T> {
+    type Node = T;
 
-    fn parent(&self) -> &T {
+    fn parent(&self) -> &<Self::Node as Node>::NodeIndex {
         &self.parent
     }
 
-    fn child(&self) -> &T {
+    fn child(&self) -> &<Self::Node as Node>::NodeIndex {
         &self.child
     }
 
@@ -37,7 +40,7 @@ impl<T: NodeIndex> Edge for BasicEdge<T> {
     }
 }
 
-impl<T: NodeIndex> fmt::Display for BasicEdge<T> {
+impl<T: Node> fmt::Display for BasicEdge<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label)
     }
