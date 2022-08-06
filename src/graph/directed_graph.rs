@@ -361,12 +361,12 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         let mut index_to_id = HashMap::with_capacity(self.node.len());
 
         {
-            let heap: BinaryHeap<Reverse<&<TEdge::Node as Node>::NodeIndex>> =
-                self.node.keys().map(|v| Reverse(v)).collect();
-            for (id, index) in heap.into_iter_sorted().enumerate() {
-                index_to_id.insert(index.0, id);
+            let heap: BinaryHeap<Reverse<&TEdge::Node>> =
+                self.node.values().map(|v| Reverse(v)).collect();
+            for (id, node) in heap.into_iter_sorted().enumerate() {
+                index_to_id.insert(node.0.index(), id);
 
-                write!(file, "  {} [label=\"{}\"]\n", id, index.0)?;
+                write!(file, "  {} [label=\"{}\"]\n", id, node.0)?;
             }
         }
         {
@@ -382,7 +382,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                         "  {} -> {} [label=\"{}\"]\n",
                         source,
                         target,
-                        edge.0.label()
+                        edge.0
                     )?;
                 }
             }
@@ -737,7 +737,7 @@ mod tests {
             String::from("3->2"),
         ));
 
-        // assert!(graph.are_on_the_path(&node_2_index, &node_1_index)); // TODO: DirectedGraph does not support 
+        // assert!(graph.are_on_the_path(&node_2_index, &node_1_index)); // TODO: DirectedGraph does not support
         assert!(graph.are_on_the_path(&node_2_index, &node_3_index));
     }
 }

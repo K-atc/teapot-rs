@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use crate::node::Node;
-use crate::error::GraphError;
-use crate::result::Result;
 use crate::edge::basic_edge::BasicEdge;
+use crate::error::GraphError;
+use crate::node::Node;
+use crate::result::Result;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct UnionFindTree<TNode: Node> {
@@ -11,14 +11,19 @@ pub struct UnionFindTree<TNode: Node> {
 
 impl<TNode: Node> UnionFindTree<TNode> {
     pub fn new() -> Self {
-        Self { parent: HashMap::new() }
+        Self {
+            parent: HashMap::new(),
+        }
     }
 
     pub fn add(&mut self, x: &TNode::NodeIndex) -> () {
         self.parent.insert(x.clone(), x.clone());
     }
 
-    pub fn find(&self, child: &TNode::NodeIndex) -> Result<TNode::NodeIndex, BasicEdge<TNode::NodeIndex>> {
+    pub fn find(
+        &self,
+        child: &TNode::NodeIndex,
+    ) -> Result<TNode::NodeIndex, BasicEdge<TNode::NodeIndex>> {
         match self.parent.get(&child) {
             Some(parent) => {
                 if parent == child {
@@ -27,23 +32,31 @@ impl<TNode: Node> UnionFindTree<TNode> {
                     Ok(self.find(parent)?)
                 }
             }
-            None => Err(GraphError::NodeNotExists(child.clone()))
+            None => Err(GraphError::NodeNotExists(child.clone())),
         }
     }
 
-    pub fn unite(&mut self, x: &TNode::NodeIndex, y: &TNode::NodeIndex) -> Result<(), BasicEdge<TNode::NodeIndex>> {
+    pub fn unite(
+        &mut self,
+        x: &TNode::NodeIndex,
+        y: &TNode::NodeIndex,
+    ) -> Result<(), BasicEdge<TNode::NodeIndex>> {
         let x = self.find(&x)?;
         let y = self.find(&y)?;
 
         if x == y {
-            return Ok(())
+            return Ok(());
         }
 
         self.parent.insert(y, x);
         Ok(())
     }
 
-    pub fn same(&self, x: &TNode::NodeIndex, y: &TNode::NodeIndex) -> Result<bool, BasicEdge<TNode::NodeIndex>> {
+    pub fn same(
+        &self,
+        x: &TNode::NodeIndex,
+        y: &TNode::NodeIndex,
+    ) -> Result<bool, BasicEdge<TNode::NodeIndex>> {
         Ok(self.find(x)? == self.find(y)?)
     }
 }
@@ -58,10 +71,10 @@ mod test {
         let node_1 = BasicNode::<usize>::new(&1);
         let node_2 = BasicNode::<usize>::new(&2);
         let node_3 = BasicNode::<usize>::new(&3);
-        
+
         #[allow(non_snake_case)]
         let mut T = UnionFindTree::<BasicNode<usize>>::new();
-        
+
         T.add(&node_1.index());
         T.add(&node_2.index());
         T.add(&node_3.index());
