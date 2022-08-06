@@ -417,8 +417,6 @@ mod tests {
     use std::println;
     use std::str;
 
-    impl NodeIndex for String {}
-
     type TestGraphNode = BasicNode<String>;
     type TestGraphEdge = BasicEdge<String>;
 
