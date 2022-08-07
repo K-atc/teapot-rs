@@ -8,6 +8,8 @@ extern crate difference;
 extern crate hashbrown;
 #[cfg(feature = "std")]
 extern crate std;
+#[cfg(feature = "std")]
+extern crate log;
 
 #[cfg(not(feature = "std"))]
 use acid_io as io;

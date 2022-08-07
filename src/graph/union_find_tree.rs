@@ -1,8 +1,9 @@
 use crate::edge::basic_edge::BasicEdge;
-use crate::error::GraphError;
 use crate::node::Node;
 use crate::result::Result;
 use hashbrown::HashMap;
+#[cfg(feature = "std")]
+use log::trace;
 
 #[derive(Debug, Clone)]
 pub struct UnionFindTree<TNode: Node> {
@@ -20,21 +21,17 @@ impl<TNode: Node> UnionFindTree<TNode> {
         self.parent.len()
     }
 
-    fn add<'a>(&mut self, x: &'a TNode::NodeIndex) -> &'a TNode::NodeIndex {
-        self.parent.insert(x.clone(), x.clone()); // Self loop
-        x
-    }
-
-    pub fn find(&self, child: &TNode::NodeIndex) -> Result<TNode::NodeIndex, BasicEdge<TNode>> {
+    pub fn find(&self, child: &TNode::NodeIndex) -> TNode::NodeIndex {
+        trace!("find({:?})", child);
         match self.parent.get(&child) {
             Some(parent) => {
                 if parent == child {
-                    Ok(child.clone())
+                    child.clone()
                 } else {
-                    Ok(self.find(parent)?)
+                    self.find(parent)
                 }
             }
-            None => Err(GraphError::NodeNotExists(child.clone())),
+            None => child.clone()
         }
     }
 
@@ -43,14 +40,8 @@ impl<TNode: Node> UnionFindTree<TNode> {
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
     ) -> Result<(), BasicEdge<TNode>> {
-        if !self.parent.contains_key(x) {
-            self.add(x);
-        }
-        if !self.parent.contains_key(y) {
-            self.add(y);
-        }
-        let x = self.find(&x)?;
-        let y = self.find(&y)?;
+        let x = self.find(&x);
+        let y = self.find(&y);
 
         if x == y {
             return Ok(());
@@ -65,7 +56,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
     ) -> Result<bool, BasicEdge<TNode>> {
-        Ok(self.find(x)? == self.find(y)?)
+        Ok(self.find(x) == self.find(y))
     }
 }
 
@@ -87,11 +78,10 @@ mod test {
         // Graph updates
         assert_eq!(T.unite(&node_1.index(), &node_2.index()), Ok(()));
         assert_eq!(T.unite(&node_1.index(), &node_3.index()), Ok(()));
-        T.add(&node_4.index());
 
         // Introspection
-        assert_eq!(T.find(&node_2.index()), Ok(1));
-        assert_eq!(T.find(&node_4.index()), Ok(4));
+        assert_eq!(T.find(&node_2.index()), 1);
+        assert_eq!(T.find(&node_4.index()), 4);
         assert_eq!(T.same(&node_2.index(), &node_3.index()), Ok(true));
         assert_eq!(T.same(&node_1.index(), &node_4.index()), Ok(false));
     }
