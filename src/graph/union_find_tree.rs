@@ -1,6 +1,4 @@
-use crate::edge::basic_edge::BasicEdge;
 use crate::node::Node;
-use crate::result::Result;
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use log::trace;
@@ -23,6 +21,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
 
     pub fn find(&self, child: &TNode::NodeIndex) -> TNode::NodeIndex {
         trace!("find({:?})", child);
+        
         match self.parent.get(&child) {
             Some(parent) => {
                 if parent == child {
@@ -39,24 +38,25 @@ impl<TNode: Node> UnionFindTree<TNode> {
         &mut self,
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
-    ) -> Result<(), BasicEdge<TNode>> {
+    ) -> () {
+        trace!("unite({:?}, {:?})", x, y);
+        
         let x = self.find(&x);
         let y = self.find(&y);
 
         if x == y {
-            return Ok(());
+            return;
         }
 
         self.parent.insert(y, x);
-        Ok(())
     }
 
     pub fn same(
         &self,
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
-    ) -> Result<bool, BasicEdge<TNode>> {
-        Ok(self.find(x) == self.find(y))
+    ) -> bool {
+        self.find(x) == self.find(y)
     }
 }
 
@@ -76,13 +76,13 @@ mod test {
         let mut T = UnionFindTree::<BasicNode<usize>>::new();
 
         // Graph updates
-        assert_eq!(T.unite(&node_1.index(), &node_2.index()), Ok(()));
-        assert_eq!(T.unite(&node_1.index(), &node_3.index()), Ok(()));
+        assert_eq!(T.unite(&node_1.index(), &node_2.index()), ());
+        assert_eq!(T.unite(&node_1.index(), &node_3.index()), ());
 
         // Introspection
         assert_eq!(T.find(&node_2.index()), 1);
         assert_eq!(T.find(&node_4.index()), 4);
-        assert_eq!(T.same(&node_2.index(), &node_3.index()), Ok(true));
-        assert_eq!(T.same(&node_1.index(), &node_4.index()), Ok(false));
+        assert_eq!(T.same(&node_2.index(), &node_3.index()), true);
+        assert_eq!(T.same(&node_1.index(), &node_4.index()), false);
     }
 }
