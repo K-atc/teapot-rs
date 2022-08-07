@@ -2,7 +2,7 @@ use crate::edge::basic_edge::BasicEdge;
 use crate::error::GraphError;
 use crate::node::Node;
 use crate::result::Result;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct UnionFindTree<TNode: Node> {

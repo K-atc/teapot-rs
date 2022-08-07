@@ -249,6 +249,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
     }
 
     /// Checks if nodes *from* and *to* is on the same path
+    #[cfg(feature = "metrics")]
     pub fn are_on_the_path(
         &self,
         from: &<TEdge::Node as Node>::NodeIndex,
@@ -410,10 +411,8 @@ mod tests {
     use difference::Changeset;
     use hashbrown::HashSet;
     use io::Read;
-    use std::fs::File;
-    use std::io;
-    use std::println;
-    use std::str;
+    #[cfg(feature = "std")]
+    use std::{fs::File, io, println, str};
 
     type TestGraphNode = BasicNode<String>;
     type TestGraphEdge = BasicEdge<TestGraphNode>;
@@ -735,7 +734,10 @@ mod tests {
             String::from("3->2"),
         ));
 
-        // assert!(graph.are_on_the_path(&node_2_index, &node_1_index)); // TODO: DirectedGraph does not support
-        assert!(graph.are_on_the_path(&node_2_index, &node_3_index));
+        #[cfg(feature = "metrics")]
+        {
+            // assert!(graph.are_on_the_path(&node_2_index, &node_1_index)); // TODO: DirectedGraph does not support
+            assert!(graph.are_on_the_path(&node_2_index, &node_3_index));
+        }
     }
 }

@@ -1,7 +1,7 @@
 use crate::node::node_index::NodeIndex;
 use crate::node::Node;
+use alloc::fmt;
 use core::fmt::Debug;
-use std::fmt;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default, Hash)]
 pub struct BasicNode<T: NodeIndex> {

@@ -1,6 +1,6 @@
 use crate::node::node_index::NodeIndex;
 use crate::node::Node;
-use std::fmt;
+use alloc::fmt;
 
 use core::fmt::Debug;
 use core::fmt::Display;

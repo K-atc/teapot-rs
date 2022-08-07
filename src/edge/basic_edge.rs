@@ -1,7 +1,7 @@
 use crate::edge::Edge;
 use crate::node::Node;
+use alloc::fmt;
 use alloc::string::String;
-use std::fmt;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub struct BasicEdge<T: Node> {
