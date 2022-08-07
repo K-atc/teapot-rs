@@ -20,8 +20,8 @@ impl<TNode: Node> UnionFindTree<TNode> {
         self.parent.len()
     }
 
-    pub fn add<'a>(&mut self, x: &'a TNode::NodeIndex) -> &'a TNode::NodeIndex {
-        self.parent.insert(x.clone(), x.clone());
+    fn add<'a>(&mut self, x: &'a TNode::NodeIndex) -> &'a TNode::NodeIndex {
+        self.parent.insert(x.clone(), x.clone()); // Self loop
         x
     }
 
@@ -46,8 +46,8 @@ impl<TNode: Node> UnionFindTree<TNode> {
         if !self.parent.contains_key(x) {
             self.add(x);
         }
-        if !self.parent.contains_key(x) {
-            self.add(x);
+        if !self.parent.contains_key(y) {
+            self.add(y);
         }
         let x = self.find(&x)?;
         let y = self.find(&y)?;
@@ -85,12 +85,9 @@ mod test {
         let mut T = UnionFindTree::<BasicNode<usize>>::new();
 
         // Graph updates
-        T.add(&node_1.index());
-        T.add(&node_2.index());
-        T.add(&node_3.index());
-        T.add(&node_4.index());
         assert_eq!(T.unite(&node_1.index(), &node_2.index()), Ok(()));
         assert_eq!(T.unite(&node_1.index(), &node_3.index()), Ok(()));
+        T.add(&node_4.index());
 
         // Introspection
         assert_eq!(T.find(&node_2.index()), Ok(1));
