@@ -1,7 +1,9 @@
 use crate::node::Node;
 use hashbrown::HashMap;
+use core::cmp::min;
 #[cfg(feature = "std")]
-use log::trace;
+#[allow(unused_imports)]
+use log::{trace, info};
 
 #[derive(Debug, Clone)]
 pub struct UnionFindTree<TNode: Node> {
@@ -38,17 +40,22 @@ impl<TNode: Node> UnionFindTree<TNode> {
         &mut self,
         x: &TNode::NodeIndex,
         y: &TNode::NodeIndex,
-    ) -> () {
-        trace!("unite({:?}, {:?})", x, y);
-        
-        let x = self.find(&x);
-        let y = self.find(&y);
+    ) -> () {        
+        let root_x = self.find(&x);
+        let root_y = self.find(&y);
 
-        if x == y {
+        trace!("unite({:?}, {:?}) = {:?}", x, y, min(&root_x, &root_y));
+
+        if root_x == root_y {
             return;
         }
 
-        self.parent.insert(y, x);
+        if root_x < root_y {
+            // NOTE: Smaller node is parent
+            self.parent.insert(root_y, root_x);
+        } else {
+            self.parent.insert(root_x, root_y);
+        }
     }
 
     pub fn same(
@@ -78,11 +85,32 @@ mod test {
         // Graph updates
         assert_eq!(T.unite(&node_1.index(), &node_2.index()), ());
         assert_eq!(T.unite(&node_1.index(), &node_3.index()), ());
+        assert_eq!(T.unite(&node_2.index(), &node_3.index()), ()); // Make a cycle
 
         // Introspection
         assert_eq!(T.find(&node_2.index()), 1);
         assert_eq!(T.find(&node_4.index()), 4);
         assert_eq!(T.same(&node_2.index(), &node_3.index()), true);
         assert_eq!(T.same(&node_1.index(), &node_4.index()), false);
+    }
+
+
+    #[test]
+    fn test_union_find_tree_reversed() {
+        let node_1 = BasicNode::<usize>::new(&1);
+        let node_2 = BasicNode::<usize>::new(&2);
+        let node_3 = BasicNode::<usize>::new(&3);
+
+        #[allow(non_snake_case)]
+        let mut T = UnionFindTree::<BasicNode<usize>>::new();
+
+        // Graph updates
+        assert_eq!(T.unite(&node_2.index(), &node_1.index()), ());
+        assert_eq!(T.unite(&node_3.index(), &node_1.index()), ());
+        assert_eq!(T.unite(&node_3.index(), &node_2.index()), ()); // Make a cycle
+
+        // Introspection
+        assert_eq!(T.find(&node_2.index()), 1);
+        assert_eq!(T.same(&node_2.index(), &node_3.index()), true);
     }
 }
