@@ -1,19 +1,19 @@
 use crate::node::Node;
 use core::cmp::min;
-use hashbrown::HashMap;
+use alloc::collections::BTreeMap;
 #[cfg(feature = "std")]
 #[allow(unused_imports)]
 use log::{info, trace};
 
 #[derive(Debug, Clone)]
 pub struct UnionFindTree<TNode: Node> {
-    parent: HashMap<TNode::NodeIndex, TNode::NodeIndex>, // Child --> Parent
+    parent: BTreeMap<TNode::NodeIndex, TNode::NodeIndex>, // Child --> Parent
 }
 
 impl<TNode: Node> UnionFindTree<TNode> {
     pub fn new() -> Self {
         Self {
-            parent: HashMap::new(),
+            parent: BTreeMap::new(),
         }
     }
 
