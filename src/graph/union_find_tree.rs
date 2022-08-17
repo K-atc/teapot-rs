@@ -1,9 +1,9 @@
 use crate::node::Node;
-use hashbrown::HashMap;
 use core::cmp::min;
+use hashbrown::HashMap;
 #[cfg(feature = "std")]
 #[allow(unused_imports)]
-use log::{trace, info};
+use log::{info, trace};
 
 #[derive(Debug, Clone)]
 pub struct UnionFindTree<TNode: Node> {
@@ -23,7 +23,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
 
     pub fn find(&self, child: &TNode::NodeIndex) -> TNode::NodeIndex {
         trace!("find({:?})", child);
-        
+
         match self.parent.get(&child) {
             Some(parent) => {
                 if parent == child {
@@ -32,15 +32,11 @@ impl<TNode: Node> UnionFindTree<TNode> {
                     self.find(parent)
                 }
             }
-            None => child.clone()
+            None => child.clone(),
         }
     }
 
-    pub fn unite(
-        &mut self,
-        x: &TNode::NodeIndex,
-        y: &TNode::NodeIndex,
-    ) -> () {        
+    pub fn unite(&mut self, x: &TNode::NodeIndex, y: &TNode::NodeIndex) -> () {
         let root_x = self.find(&x);
         let root_y = self.find(&y);
 
@@ -58,11 +54,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
         }
     }
 
-    pub fn same(
-        &self,
-        x: &TNode::NodeIndex,
-        y: &TNode::NodeIndex,
-    ) -> bool {
+    pub fn same(&self, x: &TNode::NodeIndex, y: &TNode::NodeIndex) -> bool {
         self.find(x) == self.find(y)
     }
 }
@@ -93,7 +85,6 @@ mod test {
         assert_eq!(T.same(&node_2.index(), &node_3.index()), true);
         assert_eq!(T.same(&node_1.index(), &node_4.index()), false);
     }
-
 
     #[test]
     fn test_union_find_tree_reversed() {

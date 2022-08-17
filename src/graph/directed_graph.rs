@@ -8,6 +8,8 @@ use crate::node::Node;
 use crate::result::Result;
 
 use alloc::collections::binary_heap::BinaryHeap;
+use alloc::collections::btree_map::Values;
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 #[allow(unused_imports)]
 use alloc::vec;
@@ -15,11 +17,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::Reverse;
 use core::fmt;
-use hashbrown::hash_map::Values;
 #[allow(unused_imports)]
 use hashbrown::{HashMap, HashSet};
 #[allow(unused_imports)]
-use log::{trace, info};
+use log::{info, trace};
 
 /// DirectedGraph:
 /// * assumes edge is *directed*.
@@ -35,15 +36,15 @@ pub struct DirectedGraph<TEdge: Edge> {
     name: String,
 
     // Stores real data
-    node: HashMap<<TEdge::Node as Node>::NodeIndex, TEdge::Node>,
-    edge: HashMap<DirectedEdge<TEdge>, TEdge>,
-    weak_edge: HashMap<DirectedEdge<TEdge>, TEdge>,
+    node: BTreeMap<<TEdge::Node as Node>::NodeIndex, TEdge::Node>,
+    edge: BTreeMap<DirectedEdge<TEdge>, TEdge>,
+    weak_edge: BTreeMap<DirectedEdge<TEdge>, TEdge>,
 
     // Indexes to search nodes
     #[cfg(feature = "metrics")]
-    children: HashMap<<TEdge::Node as Node>::NodeIndex, HashSet<<TEdge::Node as Node>::NodeIndex>>,
+    children: BTreeMap<<TEdge::Node as Node>::NodeIndex, HashSet<<TEdge::Node as Node>::NodeIndex>>,
     #[cfg(feature = "metrics")]
-    parent: HashMap<<TEdge::Node as Node>::NodeIndex, <TEdge::Node as Node>::NodeIndex>,
+    parent: BTreeMap<<TEdge::Node as Node>::NodeIndex, <TEdge::Node as Node>::NodeIndex>,
 }
 
 impl<TEdge: Edge> fmt::Display for DirectedGraph<TEdge> {
@@ -62,13 +63,13 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         Self {
             name,
             // NOTE: Do not use `HashMap::new()`. `HashMap::with_capacity()` avoids assertion fail
-            node: HashMap::with_capacity(1024),
-            edge: HashMap::with_capacity(1024),
-            weak_edge: HashMap::with_capacity(32),
+            node: BTreeMap::new(),
+            edge: BTreeMap::new(),
+            weak_edge: BTreeMap::new(),
             #[cfg(feature = "metrics")]
-            children: HashMap::with_capacity(1024),
+            children: BTreeMap::new(),
             #[cfg(feature = "metrics")]
-            parent: HashMap::with_capacity(1024),
+            parent: BTreeMap::new(),
         }
     }
 
