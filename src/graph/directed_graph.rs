@@ -19,6 +19,7 @@ use core::cmp::Reverse;
 use core::fmt;
 #[allow(unused_imports)]
 use hashbrown::{HashMap, HashSet};
+#[cfg(feature = "std")]
 #[allow(unused_imports)]
 use log::{info, trace};
 

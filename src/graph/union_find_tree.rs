@@ -1,6 +1,8 @@
 use crate::node::Node;
-use core::cmp::min;
+
 use alloc::collections::BTreeMap;
+#[cfg(feature = "std")]
+use core::cmp::min;
 #[cfg(feature = "std")]
 #[allow(unused_imports)]
 use log::{info, trace};
@@ -22,6 +24,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
     }
 
     pub fn find(&self, child: &TNode::NodeIndex) -> TNode::NodeIndex {
+        #[cfg(feature = "std")]
         trace!("find({:?})", child);
 
         match self.parent.get(&child) {
@@ -40,6 +43,7 @@ impl<TNode: Node> UnionFindTree<TNode> {
         let root_x = self.find(&x);
         let root_y = self.find(&y);
 
+        #[cfg(feature = "std")]
         trace!("unite({:?}, {:?}) = {:?}", x, y, min(&root_x, &root_y));
 
         if root_x == root_y {
