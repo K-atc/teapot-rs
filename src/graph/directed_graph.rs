@@ -325,14 +325,14 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
         let mut index_to_id = HashMap::with_capacity(self.node.len());
 
         {
-            let heap: BinaryHeap<Reverse<&<TEdge::Node as Node>::NodeIndex>> =
-                self.node.keys().map(|v| Reverse(v)).collect();
-            for (id, index) in heap.into_iter_sorted().enumerate() {
-                index_to_id.insert(index.0, id);
+            let heap: BinaryHeap<Reverse<&TEdge::Node>> =
+                self.node.values().map(|v| Reverse(v)).collect();
+            for (id, node) in heap.into_iter_sorted().enumerate() {
+                index_to_id.insert(node.0.index(), id);
 
                 write!(file, "  node [\n")?;
                 write!(file, "    id {}\n", id)?;
-                write!(file, "    label \"{}\"\n", index.0)?;
+                write!(file, "    label \"{}\"\n", node.0)?;
                 // metrics! {{
                 //     write!(file, "    rank {}\n", self.rank_of(index.0)?)?;
                 //     write!(file, "    is_root {}\n", if self.is_root(index.0)? { 1 } else { 0 })?;
@@ -351,7 +351,7 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
                     write!(file, "  edge [\n")?;
                     write!(file, "    source {}\n", source)?;
                     write!(file, "    target {}\n", target)?;
-                    write!(file, "    label \"{}\"\n", edge.0.label())?;
+                    write!(file, "    label \"{}\"\n", edge.0)?;
                     write!(file, "  ]\n")?;
                 }
             }
