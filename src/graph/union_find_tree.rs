@@ -108,4 +108,31 @@ mod test {
         assert_eq!(T.find(&node_2.index()), 1);
         assert_eq!(T.same(&node_2.index(), &node_3.index()), true);
     }
+
+    #[test]
+    fn test_union_find_tree_hieral() {
+        let node_1 = BasicNode::<usize>::new(&1);
+        let node_2 = BasicNode::<usize>::new(&2);
+        let node_3 = BasicNode::<usize>::new(&3);
+        let node_4 = BasicNode::<usize>::new(&4);
+
+        #[allow(non_snake_case)]
+        let mut T = UnionFindTree::<BasicNode<usize>>::new();
+
+        //   1
+        //  / \
+        // 2   3
+        //     |
+        //     4
+
+        // Graph updates
+        assert_eq!(T.unite(&node_1.index(), &node_2.index()), ());
+        assert_eq!(T.unite(&node_1.index(), &node_3.index()), ());
+        assert_eq!(T.unite(&node_4.index(), &node_3.index()), ());
+
+        // Introspection
+        assert_eq!(T.find(&node_2.index()), 1);
+        assert_eq!(T.find(&node_3.index()), 1);
+        assert_eq!(T.find(&node_4.index()), 1);
+    }
 }
