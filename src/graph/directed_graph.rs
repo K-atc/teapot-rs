@@ -306,10 +306,13 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
 
     #[cfg(feature = "metrics")]
     pub fn roots(&self) -> HashSet<&<TEdge::Node as Node>::NodeIndex> {
-        self.node
+        let mut result = HashSet::with_capacity(8); // NOTE: Do not use collect(); HashSet::with_capacity() avoids assertion fail in Intel Pin
+        for root in self.node
             .keys()
-            .filter(|v| self.parent_of(v).is_none())
-            .collect()
+            .filter(|v| self.parent_of(v).is_none()) {
+            result.insert(root);
+        }
+        result
     }
 
     #[cfg(feature = "metrics")]
