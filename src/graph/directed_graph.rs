@@ -110,6 +110,8 @@ impl<TEdge: Edge> DirectedGraph<TEdge> {
             return;
         }
 
+        trace!("add_edge({})", edge);
+
         metrics! {
             // Insert edge and update indexes avoiding making closed chains
             // NOTE: Cannot support this workaround without `metrics` feature
