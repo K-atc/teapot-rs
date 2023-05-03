@@ -7,7 +7,7 @@ use core::cmp::min;
 #[allow(unused_imports)]
 use log::{info, trace};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct UnionFindTree<TNode: Node> {
     parent: BTreeMap<TNode::NodeIndex, TNode::NodeIndex>, // Child --> Parent
 }
