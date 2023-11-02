@@ -3,7 +3,7 @@ use crate::node::Node;
 use alloc::fmt;
 use alloc::string::String;
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Default, Hash)]
 pub struct BasicEdge<T: Node> {
     parent: <T as Node>::NodeIndex,
     child: <T as Node>::NodeIndex,
